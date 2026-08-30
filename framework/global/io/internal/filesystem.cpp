@@ -28,6 +28,15 @@
 
 #ifdef Q_OS_WIN
 #include <windows.h>
+#include <io.h>
+#else
+#include <unistd.h>
+#endif
+
+#ifdef Q_OS_WIN
+    #define OS_SYNC_FILE(handle) _commit((handle))
+#else
+    #define OS_SYNC_FILE(handle) fsync((handle))
 #endif
 
 #include "../ioretcodes.h"
@@ -197,7 +206,7 @@ Ret FileSystem::readFile(const io::path_t& filePath, ByteArray& data) const
     return ret;
 }
 
-Ret FileSystem::writeFile(const io::path_t& filePath, const ByteArray& data)
+Ret FileSystem::writeFile(const io::path_t& filePath, const ByteArray& data, bool syncToDisk)
 {
     Ret ret = muse::make_ok();
 
@@ -220,6 +229,19 @@ Ret FileSystem::writeFile(const io::path_t& filePath, const ByteArray& data)
         ret = make_ret(Err::FSWriteError);
         ret.setText("Failed to write entire file");
         return ret;
+    }
+
+    if (syncToDisk) {
+        // Flush before syncing to ensure all data is written to the OS buffers
+        file.flush();
+
+        // NOTE: QFile::flush() does not guarantee that the data is written to disk, it only flushes the data to the OS buffers. 
+        // To ensure that the data is actually written to disk, we need to call fsync() on the file descriptor.
+        if (OS_SYNC_FILE(file.handle()) == -1) {
+            ret = make_ret(Err::FSWriteError);
+            ret.setText("Failed to sync file to disk");
+            return ret;
+        }
     }
 
     file.close();
