@@ -228,6 +228,8 @@ else()
         target_sources(muse_global PRIVATE
             io/internal/filesystem.cpp
             io/internal/filesystem.h
+            io/internal/filesync.cpp
+            io/internal/filesync.h
         )
     endif()
 
