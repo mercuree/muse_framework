@@ -66,6 +66,9 @@ public:
     virtual RetVal<ByteArray> readFile(const io::path_t& filePath) const = 0;
     virtual Ret readFile(const io::path_t& filePath, ByteArray& data) const = 0;
     virtual Ret writeFile(const io::path_t& filePath, const ByteArray& data) = 0;
+    virtual Ret writeFile(const io::path_t& filePath, const ByteArray& data, bool syncToDisk){
+        return writeFile(filePath, data);
+    }
 
     //! Streaming write
     virtual RetVal<StreamId> openStream(const io::path_t& filePath, OpenMode mode) = 0;
